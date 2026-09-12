@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kakao_map_plugin_cef/kakao_map_plugin_cef.dart';
 
 void main() {
-  test('채널 shim 은 <head> 바로 뒤에 들어가고 등록한 채널 이름만 노출한다', () {
+  test('채널 shim 은 <head> 바로 뒤에 들어가고 등록한 채널과 내부 평가 채널을 노출한다', () {
     final bridge = CefBridge()
       ..addJavaScriptChannel('onMapCreated', (_) {})
       ..addJavaScriptChannel('onMapTap', (_) {});
@@ -11,7 +11,7 @@ void main() {
     final headEnd = html.indexOf('<head>') + '<head>'.length;
     expect(
         html.substring(headEnd).startsWith(
-            '<script>(function(){var names=["onMapCreated","onMapTap"]'),
+            '<script>(function(){var names=["onMapCreated","onMapTap","kmpEvalResult"]'),
         isTrue,
         reason: html);
     expect(

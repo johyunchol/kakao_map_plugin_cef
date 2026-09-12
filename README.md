@@ -34,6 +34,10 @@ The map is rendered off-screen by Chromium and presented as a Flutter `Texture`,
 * Do not add this package to apps that only target Android / iOS / Web / macOS. macOS is supported by `kakao_map_plugin` itself through `webview_flutter`, and adding `webview_cef` would force the CEF download on every macOS build.
 * Hover callbacks (`onMarkerMouseOver` etc.) work on desktop because a mouse pointer is present.
 
+## Linux in Docker / CI
+
+Chromium needs shared memory. With Docker's default `/dev/shm` (64 MB) the renderer logs `fallocate: No space left on device` and JavaScript calls stop returning a few seconds after the map is created. Run containers with `--shm-size=1g` or more, and use software GL (`LIBGL_ALWAYS_SOFTWARE=1`) when there is no GPU.
+
 ## Example
 
 `example/` runs the full 84-screen example app of `kakao_map_plugin` on Windows / Linux. It reuses the core example package, so set the app key in `../../example/assets/env/.env` (see the core README) and add `DESKTOP_PORT=<port you registered>` there if you do not use 8790.

@@ -29,8 +29,16 @@ class CefBridge implements KakaoMapBridge {
 
   static Future<void>? _managerReady;
 
+  /// JS 평가 결과를 돌려받는 내부 채널 이름입니다.
+  ///
+  /// `webview_cef` 의 `evaluateJavascript` 는 문자열·숫자 외의 결과(객체, 불리언 등)를
+  /// 제대로 돌려주지 못하므로 쓰지 않습니다. 대신 스크립트를 실행하고 결과를 채널로
+  /// 돌려받습니다. 결과는 Android WebView 와 같은 JSON 문자열 형식입니다.
+  static const String evalChannel = 'kmpEvalResult';
+
   cef.WebViewController? _controller;
   final Map<String, BridgeMessageHandler> _channels = {};
+  final Map<int, Completer<Object?>> _pendingEvals = {};
   String? _url;
   String? _html;
   bool _disposed = false;
@@ -46,7 +54,7 @@ class CefBridge implements KakaoMapBridge {
 
   /// 채널 shim 스크립트를 만듭니다. 문서의 다른 스크립트보다 먼저 실행되어야 합니다.
   String _channelShim() {
-    final names = jsonEncode(_channels.keys.toList());
+    final names = jsonEncode([..._channels.keys, evalChannel]);
     return '<script>(function(){var names=$names;for(var i=0;i<names.length;i++){(function(n){'
         'window[n]={postMessage:function(m){external.JavaScriptChannel(n,String(m));}};'
         '})(names[i]);}})();</script>';
@@ -132,6 +140,10 @@ class CefBridge implements KakaoMapBridge {
     _log('create: browser initialized');
     if (_disposed) return;
     await controller.setJavaScriptChannels({
+      cef.JavascriptChannel(
+        name: evalChannel,
+        onMessageReceived: (message) => _onEvalResult(_unwrap(message.message)),
+      ),
       for (final entry in _channels.entries)
         cef.JavascriptChannel(
           name: entry.key,
@@ -167,12 +179,41 @@ class CefBridge implements KakaoMapBridge {
     if (controller == null || _disposed) return null;
     final id = ++_seq;
     _log('eval#$id ${script.length > 60 ? script.substring(0, 60) : script}');
-    final result = await controller.evaluateJavascript(script);
-    _log('eval#$id -> ${result.runtimeType}');
-    // 호출 측은 JSON 문자열을 기대합니다(Android WebView 와 같은 형식).
-    if (result == null) return 'null';
-    if (result is String) return result;
-    return jsonEncode(result);
+    final completer = Completer<Object?>();
+    _pendingEvals[id] = completer;
+    // 스크립트는 WebView 의 runJavaScriptReturningResult 처럼 "마지막 문장의 값" 을 돌려줘야
+    // 하므로(예: `getCenter();`) 전역 eval 로 평가하고, 결과는 JSON.stringify 로 감싸
+    // Android WebView 와 같은 형식(JSON 문자열)으로 돌려줍니다.
+    final wrapped =
+        '(function(){var r,e=null;try{r=JSON.stringify((0,eval)(${jsonEncode(script)}));}'
+        'catch(x){e=String(x);}if(r===undefined){r="null";}'
+        'window.$evalChannel.postMessage(JSON.stringify({id:$id,r:r,e:e}));})();';
+    try {
+      await controller.executeJavaScript(wrapped);
+    } catch (error) {
+      _pendingEvals.remove(id);
+      rethrow;
+    }
+    return completer.future;
+  }
+
+  void _onEvalResult(String message) {
+    Map<String, dynamic> decoded;
+    try {
+      decoded = jsonDecode(message) as Map<String, dynamic>;
+    } catch (_) {
+      return;
+    }
+    final id = decoded['id'];
+    final completer = id is int ? _pendingEvals.remove(id) : null;
+    if (completer == null) return;
+    final error = decoded['e'];
+    _log('eval#$id <- ${error == null ? 'ok' : 'error'}');
+    if (error != null) {
+      completer.completeError(StateError('JavaScript 오류: $error'));
+    } else {
+      completer.complete(decoded['r'] as String? ?? 'null');
+    }
   }
 
   @override
@@ -190,6 +231,12 @@ class CefBridge implements KakaoMapBridge {
   Future<void> dispose() async {
     _log('dispose');
     _disposed = true;
+    for (final pending in _pendingEvals.values) {
+      if (!pending.isCompleted) {
+        pending.completeError(StateError('브릿지가 dispose 되었습니다.'));
+      }
+    }
+    _pendingEvals.clear();
     final url = _url;
     if (url != null) KakaoMapLocalServer.instance.remove(url);
     final controller = _controller;
