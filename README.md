@@ -1,5 +1,7 @@
 # kakao_map_plugin_cef
 
+English | [한국어](README_KO.md)
+
 Windows / Linux implementation of [kakao_map_plugin](https://pub.dev/packages/kakao_map_plugin), backed by [webview_cef](https://pub.dev/packages/webview_cef) (Chromium Embedded Framework).
 
 The map is rendered off-screen by Chromium and presented as a Flutter `Texture`, so Flutter widgets, bottom sheets and routes work above the map exactly like on mobile.
@@ -25,7 +27,7 @@ The map is rendered off-screen by Chromium and presented as a Flutter `Texture`,
    Desktop WebViews cannot pass a base URL for an HTML string, so the plugin serves the map document from a loopback HTTP server on this port. Change the port with `AuthRepository.initialize(desktopPort: ...)` or `KakaoMapDesktop.localServerPort` and register the same value.
 
 3. Follow the `webview_cef` platform notes:
-   * **Windows**: edit `windows/runner/main.cpp` to call `initCEFProcesses` first and forward messages with `handleWndProcForCEF` (see the [webview_cef README](https://pub.dev/packages/webview_cef#windows)). WebView2 is not used; the app bundles Chromium.
+   * **Windows**: edit `windows/runner/main.cpp` to call `initCEFProcesses` first and forward messages with `handleWndProcForCEF` (see the [webview_cef README](https://pub.dev/packages/webview_cef#windows)); a copy-ready example is in [example/windows/runner/main.cpp](example/windows/runner/main.cpp). WebView2 is not used; the app bundles Chromium.
    * **Linux**: install `clang cmake ninja-build pkg-config libgtk-3-dev`. CEF is downloaded on the first build, and `linux/runner/main.cc` / `my_application.cc` are patched automatically (commit the changes).
    * The first build downloads the CEF distribution (~330 MB). Apps grow by roughly 150 MB.
 
