@@ -1,0 +1,33 @@
+name: kakao_map_plugin_cef_example
+description: Desktop (Windows / Linux) runner for the kakao_map_plugin example app using kakao_map_plugin_cef.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  kakao_map_plugin:
+    path: ../../
+  kakao_map_plugin_cef:
+    path: ../
+  # 84개 예제 화면을 그대로 재사용합니다.
+  kakao_map_plugin_example:
+    path: ../../example
+  flutter_dotenv: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/env/
+    - assets/images/

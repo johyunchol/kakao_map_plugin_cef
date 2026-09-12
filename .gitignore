@@ -1,0 +1,25 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+pubspec.lock
+/pubspec_overrides.yaml
+example/pubspec_overrides.yaml
+example/build/
+**/ephemeral/
+example/linux/flutter/generated_*
+example/windows/flutter/generated_*
+example/.dart_tool/
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+
+# AI 코딩 도구 관련
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+.omc/
+.playwright-mcp/

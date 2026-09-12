@@ -1,0 +1,31 @@
+name: kakao_map_plugin_cef
+description: Windows and Linux support for kakao_map_plugin using webview_cef (Chromium Embedded Framework). Add this package to render Kakao Maps on desktop.
+version: 1.1.0
+homepage: https://github.com/johyunchol/kakao_map_plugin
+repository: https://github.com/johyunchol/kakao_map_plugin/tree/main/kakao_map_plugin_cef
+issue_tracker: https://github.com/johyunchol/kakao_map_plugin/issues
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  kakao_map_plugin: ^1.1.0
+  webview_cef: ^0.6.2
+  webview_flutter: ^4.12.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  plugin:
+    implements: kakao_map_plugin
+    platforms:
+      windows:
+        dartPluginClass: KakaoMapPluginCef
+      linux:
+        dartPluginClass: KakaoMapPluginCef
